@@ -1,0 +1,50 @@
+Prime is a simple pastebin.com interface.
+
+Simply provide it with a list  of files and it'll take care
+of the rest (sort of).
+
+
+Requirements 
+------------
+
+cpanm  is   recommended  to  install   these  requirements.
+https://github.com/miyagawa/cpanminus
+
+- Data::Serializer
+- File::HomeDir
+- HTTP::Request::Common
+- JSON::MaybeXS 
+- LWP::UserAgent
+- Term::ReadKey
+
+
+Installation 
+------------
+
+Save prime.pl to a  location of your choice (usr/local/bin/
+recommended), make sure it has execution rights (chmod +x),
+and you're done!
+
+
+Notes / Extras
+--------------
+
+To give  your paste a  specific title, add "title:"  to the
+first line of  your file. Prime will use this  as the title
+for pastebin,  but won't add it  to the final paste.  If no
+title is  given, Prime will  default to the current  date +
+epoc time.
+
+Use "-h" or "--help" for a condensed version of this file.
+
+
+Example Usage
+-------------
+
+[command]
+prime file.txt
+
+[output]
+Status: Uploading file 1 of 1
+Status: Paste '20181026-1540605118' uploaded successfully!
+URL: https://pastebin.com/xxxxxxxx
