@@ -2,14 +2,12 @@
 
 use strict;
 use warnings;
-
 use HTTP::Request::Common;
 use LWP::UserAgent;
 use Term::ReadKey;
 use File::HomeDir;
 use JSON::MaybeXS qw(encode_json decode_json);
 use POSIX qw(strftime);
-
 use Data::Serializer;
 my $controller = Data::Serializer->new(
     digester => 'MD5',
@@ -20,11 +18,12 @@ my $controller = Data::Serializer->new(
 
 my $HOME = File::HomeDir->my_home;
 
-my $PKG_NAME   = "Prime";
-my $PKG_CONFIG = "$HOME/.primeconf";
-my $PKG_HELP   = <<HELP;
+my $PKG_NAME    = "Prime";
+my $PKG_VER     = "1.2";
+my $PKG_CONFIG  = "$HOME/.primeconf";
+my $PKG_HELP    = <<HELP;
 
-  $PKG_NAME (1.0) is a simple pastebin.com interface!
+  $PKG_NAME ($PKG_VER) is a simple pastebin.com interface!
     Simply provide it with a list of files 
     and it'll take care of the rest (sort of).
   
@@ -65,6 +64,7 @@ sub start {
         $API_PASS     = $config_reference->{api_pass};
         &proc_flags;
     }
+    return;
 }
 
 sub initialize {
@@ -75,13 +75,13 @@ sub initialize {
     );
 
     print("Pastebin API Key (Required): ");
-    chomp($API_KEY = <STDIN>);
+    chomp($API_KEY = <>);
     if ($API_KEY eq "") {
         die("Error: A pastebin API key is required! Please try again.\n");
     }
 
     print("Pastebin Username (Leave blank for guest): ");
-    chomp($API_UNAME = <STDIN>);
+    chomp($API_UNAME = <>);
 
     print("Pastebin Password (Leave blank for guest): ");
     ReadMode('noecho');
@@ -99,7 +99,8 @@ sub initialize {
         },
         $PKG_CONFIG
     );
-    print("Status: Credentials saved! $PKG_NAME will now restart.\n");
+    print("Status: Credentials saved! Please restart $PKG_NAME.\n");
+    return;
 }
 
 sub check_login {
@@ -121,13 +122,14 @@ sub check_login {
     else {
         die("Error: Could not login! Please check login credentials.\n");
     }
+    return;
 }
 
 sub proc_flags {
     my @flags     = @ARGV;
     my $cur_file  = 1;
     my $num_files = scalar(@flags);
-    if (scalar(@flags) == 0 || $ARGV[0] =~ /(--help|-h)/) {
+    if (scalar(@flags) == 0 || $ARGV[0] =~ /(--help|-h)/x) {
         die($PKG_HELP, "\n");
     }
 
@@ -143,6 +145,7 @@ sub proc_flags {
         undef(@file_lines);
         $cur_file++;
     }
+    return;
 }
 
 sub check_for_title {
@@ -152,17 +155,18 @@ sub check_for_title {
         push(@file_lines, $_);
     }
     close($handler);
-    if ($file_lines[0] =~ /^title\:/) {
-        ($PASTE_TITLE) = $file_lines[0] =~ /\:(.*)/;
-        $PASTE_TITLE =~ s/^\s+//g;
+    if ($file_lines[0] =~ /^title\:/x) {
+        ($PASTE_TITLE) = $file_lines[0] =~ /\:(.*)/x;
+        $PASTE_TITLE =~ s/^\s+//gx;
         shift(@file_lines);
     }
+    return;
 }
 
 sub upload_paste {
     my $paste_data;
 
-    if ($_[0] =~ /^\s$/) {
+    if ($_[0] =~ /^\s$/x) {
         shift(@_);
     }
 
