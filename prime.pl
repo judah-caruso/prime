@@ -25,25 +25,25 @@ my $PKG_CONFIG = "$HOME/.primeconf";
 my $PKG_HELP   = <<HELP;
 
   $PKG_NAME (1.0) is a simple pastebin.com interface!
-  	Simply provide it with a list of files 
-  	and it'll take care of the rest (sort of).
+    Simply provide it with a list of files 
+    and it'll take care of the rest (sort of).
   
   Example:
-  	prime file1.txt file2.js file3.log 
+    prime file1.txt file2.js file3.log 
 
   Tips:
-  	Prime doesn't use the filename for uploading.
-  	If you want the paste to have a specific title,
-  	add "title:" to the first line of your file.
-  	The title line is not shown in the uploaded paste.
-  	Example:
-  		title: useful links
-  		+ https://github.com/kyoto-shift/prime
-  		+ https://pastebin.com
+    Prime doesn't use the filename for uploading.
+    If you want the paste to have a specific title,
+    add "title:" to the first line of your file.
+    The title line is not shown in the uploaded paste.
+    Example:
+      title: useful links
+      + https://github.com/kyoto-shift/prime
+      + https://pastebin.com
 HELP
 
 my ($API_KEY, $API_UNAME, $API_PASS, $API_USER_KEY);
-my $API_URL = 'https://pastebin.com/api/api_post.php';
+my $API_URL       = 'https://pastebin.com/api/api_post.php';
 my $API_LOGIN_URL = 'https://pastebin.com/api/api_login.php';
 
 my ($CUR_DATE, $PASTE_TITLE);
@@ -52,12 +52,14 @@ my @file_lines;
 
 sub start {
     if (!-e $PKG_CONFIG) {
-    	# if config doesn't exist, get info from user
+
+        # if config doesn't exist, get info from user
         &initialize;
-    } else {
-    	# if config exists, deserialize the file and assign to variables
+    }
+    else {
+        # if config exists, deserialize the file and assign to variables
         my $config_reference = $controller->retrieve("$PKG_CONFIG");
-        $API_KEY   	  = $config_reference->{api_key};
+        $API_KEY      = $config_reference->{api_key};
         $API_USER_KEY = $config_reference->{api_user_key};
         $API_UNAME    = $config_reference->{api_uname};
         $API_PASS     = $config_reference->{api_pass};
@@ -68,12 +70,14 @@ sub start {
 sub initialize {
     print("It's your first time using $PKG_NAME!\n");
     print("Please input your Pastebin credentials to get started.\n");
-    print("Note: You will need a Pastebin API key. (https://pastebin.com/api#1)\n\n");
+    print(
+        "Note: You will need a Pastebin API key. (https://pastebin.com/api#1)\n\n"
+    );
 
     print("Pastebin API Key (Required): ");
     chomp($API_KEY = <STDIN>);
     if ($API_KEY eq "") {
-    	die("Error: A pastebin API key is required! Please try again.\n");
+        die("Error: A pastebin API key is required! Please try again.\n");
     }
 
     print("Pastebin Username (Leave blank for guest): ");
@@ -88,9 +92,9 @@ sub initialize {
     &check_login;
     $controller->store(
         {
-            api_key   => $API_KEY,
-            api_uname => $API_UNAME,
-            api_pass  => $API_PASS,
+            api_key      => $API_KEY,
+            api_uname    => $API_UNAME,
+            api_pass     => $API_PASS,
             api_user_key => $API_USER_KEY,
         },
         $PKG_CONFIG
@@ -99,91 +103,93 @@ sub initialize {
 }
 
 sub check_login {
-	if (!$API_UNAME) {
-		return;
-	}
-	my $login_info = {
-		api_dev_key => $API_KEY,
-		api_user_name => $API_UNAME,
-		api_user_password => $API_PASS,
-	};
-	my $ua = LWP::UserAgent->new();
-	my $req = HTTP::Request::Common::POST($API_LOGIN_URL, $login_info);
-	my $res = $ua->request($req);
-
-	if ($res->is_success) {
-		$API_USER_KEY = $res->content;
-	} else {
-		die("Error: Could not login! Please check login credentials.\n");
-	}
-}
-
-sub proc_flags {
-    my @flags = @ARGV;
-    my $cur_file = 1;
-    my $num_files = scalar(@flags);
-    if (scalar(@flags) == 0 || $ARGV[0] =~ /(--help|-h)/) {
-    	die($PKG_HELP, "\n") 
+    if (!$API_UNAME) {
+        return;
+    }
+    my $login_info = {
+        api_dev_key       => $API_KEY,
+        api_user_name     => $API_UNAME,
+        api_user_password => $API_PASS,
     };
+    my $ua  = LWP::UserAgent->new();
+    my $req = HTTP::Request::Common::POST($API_LOGIN_URL, $login_info);
+    my $res = $ua->request($req);
 
-    foreach my $file (@flags) {
-      print("Status: Uploading file $cur_file of $num_files\n");
-
-      $CUR_DATE = strftime "%Y%m%d-%s", localtime;
-      $PASTE_TITLE = '' || $CUR_DATE;
-
-      &check_for_title($file);
-      &upload_paste(@file_lines);
-
-      undef(@file_lines);
-      $cur_file++;
+    if ($res->is_success) {
+        $API_USER_KEY = $res->content;
+    }
+    else {
+        die("Error: Could not login! Please check login credentials.\n");
     }
 }
 
-sub check_for_title { 
-	open (my $handler, '<', $_[0])
-		or die ("Error: Could not open file '$_[0]'!\n");
-	while(<$handler>) {
-		push(@file_lines, $_);
-	}
-	close($handler);
-	if ($file_lines[0] =~ /^title\:/) {
-  	($PASTE_TITLE) = $file_lines[0] =~ /\:(.*)/;
-  	$PASTE_TITLE =~ s/^\s+//g;
-  	shift(@file_lines);
-	}
+sub proc_flags {
+    my @flags     = @ARGV;
+    my $cur_file  = 1;
+    my $num_files = scalar(@flags);
+    if (scalar(@flags) == 0 || $ARGV[0] =~ /(--help|-h)/) {
+        die($PKG_HELP, "\n");
+    }
+
+    foreach my $file (@flags) {
+        print("Status: Uploading file $cur_file of $num_files\n");
+
+        $CUR_DATE = strftime "%Y%m%d-%s", localtime;
+        $PASTE_TITLE = '' || $CUR_DATE;
+
+        &check_for_title($file);
+        &upload_paste(@file_lines);
+
+        undef(@file_lines);
+        $cur_file++;
+    }
+}
+
+sub check_for_title {
+    open(my $handler, '<', $_[0])
+      or die("Error: Could not open file '$_[0]'!\n");
+    while (<$handler>) {
+        push(@file_lines, $_);
+    }
+    close($handler);
+    if ($file_lines[0] =~ /^title\:/) {
+        ($PASTE_TITLE) = $file_lines[0] =~ /\:(.*)/;
+        $PASTE_TITLE =~ s/^\s+//g;
+        shift(@file_lines);
+    }
 }
 
 sub upload_paste {
-	my $paste_data;
-	
-	if ($_[0] =~ /^\s$/) {
-		shift(@_);
-	}
+    my $paste_data;
 
-	$paste_data = [
-	    api_dev_key       => $API_KEY,
-	    api_user_name     => $API_UNAME,
-	    api_user_password => $API_PASS,
-	    api_user_key 	    => $API_USER_KEY,
-	    api_option        => "paste",
-	    api_paste_name	  => $PASTE_TITLE,
-	    api_paste_code    => join("", @_),
-	];
+    if ($_[0] =~ /^\s$/) {
+        shift(@_);
+    }
 
-	my $agent = LWP::UserAgent->new();
-	my $request = HTTP::Request::Common::POST($API_URL, $paste_data);
-	my $response = $agent->request($request);
+    $paste_data = [
+        api_dev_key       => $API_KEY,
+        api_user_name     => $API_UNAME,
+        api_user_password => $API_PASS,
+        api_user_key      => $API_USER_KEY,
+        api_option        => "paste",
+        api_paste_name    => $PASTE_TITLE,
+        api_paste_code    => join("", @_),
+    ];
 
-	if ($response->is_success) {
-		print("Status: Paste '$PASTE_TITLE' uploaded successfully!\n");
-		print("URL: ", $response->content, "\n");
-	} else {
-    die("Error: ", $response->status_line, "\n");
-	}
+    my $agent    = LWP::UserAgent->new();
+    my $request  = HTTP::Request::Common::POST($API_URL, $paste_data);
+    my $response = $agent->request($request);
 
-	sleep(1);
-	return;
+    if ($response->is_success) {
+        print("Status: Paste '$PASTE_TITLE' uploaded successfully!\n");
+        print("URL: ", $response->content, "\n");
+    }
+    else {
+        die("Error: ", $response->status_line, "\n");
+    }
+
+    sleep(1);
+    return;
 }
 
 &start;
